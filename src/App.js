@@ -151,7 +151,6 @@ class App extends React.Component {
             {/* Added export to csv function */}
             <CSVLink
               className="buttons buttons__export"
-              target="_blank"
               filename={this.state.currentDate + 'spent_record.csv'}
               data={this.state.expenses.map(item => ({
                 month: item.month,
