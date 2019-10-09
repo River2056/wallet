@@ -1,4 +1,5 @@
 import React from "react";
+import uuid from 'uuid';
 
 class AddForm extends React.Component {
   constructor(props) {
@@ -11,7 +12,7 @@ class AddForm extends React.Component {
 
   submitForm = e => {
     e.preventDefault();
-    const id = Math.floor(Math.random() * 1000000);
+    const id = uuid.v4();
     const currentDate = new Date();
     const month = currentDate.getMonth() + 1 < 10 ? '0' + currentDate.getMonth() + 1 : currentDate.getMonth() + 1;
     const date = currentDate.getDate() < 10 ? '0' + currentDate.getDate() : currentDate.getDate();

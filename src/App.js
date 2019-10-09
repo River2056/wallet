@@ -1,23 +1,30 @@
 import React from 'react';
 import Modal from "react-modal";
+import { CSVLink, CSVDownload } from "react-csv";
 import './App.css';
 
 import AddForm from "./components/AddForm";
 import WalletModal from "./components/WalletModal";
 import RecordList from "./components/RecordList";
+const firebase = require('firebase');
 
 class App extends React.Component {
   constructor(props) {
     super(props);
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1 < 10 ? '0' + currentDate.getMonth() + 1 : currentDate.getMonth() + 1;
+    const date = currentDate.getDate() < 10 ? '0' + currentDate.getDate() : currentDate.getDate();
     this.state = {
       wallet: 0,
       modalVisible: false,
       modalRecordItem: false,
-      expenses: []
+      expenses: [],
+      currentDate: `${year}${month}${date}`
     }
   }
 
-  componentDidMount = () => {
+  componentDidMount = async () => {
     const json = localStorage.getItem('wallet');
     if (json) {
       const jsonObj = JSON.parse(json);
@@ -25,6 +32,36 @@ class App extends React.Component {
         return jsonObj;
       });
     }
+    // else {
+    //   const wallet = await firebase
+    //     .firestore()
+    //     .collection('wallet') // tables
+    //     .onSnapshot(query => {
+    //       const wallet = query.docs.map(_doc => {
+    //         const data = _doc.data(); // get wallet data as object
+    //         return data;
+    //       });
+    //       this.setState(() => {
+    //         return {
+    //           wallet: wallet
+    //         }
+    //       });
+    //     });
+    //   const expenses = await firebase
+    //     .firestore()
+    //     .collection('expenses')
+    //     .onSnapshot(query => {
+    //       const expenses = query.docs.map(_doc => {
+    //         const data = _doc.data(); // gets every expenses as array
+    //         return data;
+    //       });
+    //       this.setState(() => {
+    //         return {
+    //           expenses: expenses
+    //         }
+    //       });
+    //     });
+    // }
   }
 
   componentDidUpdate = () => {
@@ -32,12 +69,16 @@ class App extends React.Component {
     localStorage.setItem('wallet', wallet);
   }
 
-  submitForm = record => {
+  submitForm = async record => {
     const currentWallet = this.state.wallet - record.exp;
-    this.setState(() => ({
+    await this.setState(() => ({
       wallet: currentWallet,
       expenses: [record, ...this.state.expenses],
     }));
+    // firebase
+    //   .firestore()
+    //   .collection('expenses')
+    //   .add(record);
   }
 
   toggleModal = () => {
@@ -106,7 +147,18 @@ class App extends React.Component {
             onRequestClose={this.toggleRecord}
             closeTimeoutMS={200}
           >
-            <button className="buttons" onClick={this.toggleRecord}>CLOSE</button>
+            <button className="buttons buttons__export" onClick={this.toggleRecord}>CLOSE</button>
+            {/* Added export to csv function */}
+            <CSVLink
+              className="buttons buttons__export"
+              target="_blank"
+              filename={this.state.currentDate + 'spent_record.csv'}
+              data={this.state.expenses.map(item => ({
+                month: item.month,
+                date: item.date,
+                title: item.title,
+                exp: item.exp
+              }))}>EXPORT CSV</CSVLink>
             <RecordList
               expenses={this.state.expenses}
             />

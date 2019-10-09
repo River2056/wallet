@@ -7,3 +7,9 @@
   border: none;
   border-bottom: .3rem solid darken($blue, 20%);
 }
+
+.buttons__export {
+  display: inline-block;
+  margin: 0 5px;
+  text-decoration: none;
+}
