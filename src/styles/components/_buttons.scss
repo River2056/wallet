@@ -1,0 +1,9 @@
+.buttons {
+  display: block;
+  color: $white;
+  background-color: $blue;
+  padding: 10px 20px;
+  margin: 10px 0;
+  border: none;
+  border-bottom: .3rem solid darken($blue, 20%);
+}
