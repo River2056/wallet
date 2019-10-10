@@ -6,6 +6,7 @@ import './App.css';
 import AddForm from "./components/AddForm";
 import WalletModal from "./components/WalletModal";
 import RecordList from "./components/RecordList";
+import ListItem from './components/ListItem';
 const firebase = require('firebase');
 
 class App extends React.Component {
@@ -24,49 +25,51 @@ class App extends React.Component {
     }
   }
 
-  componentDidMount = async () => {
-    const json = localStorage.getItem('wallet');
-    if (json) {
-      const jsonObj = JSON.parse(json);
-      this.setState(() => {
-        return jsonObj;
-      });
+  sortByDateDesc = expArr => {
+    let tempObj = {};
+    for (let i = 0; i < expArr.length; i++) {
+      for (let j = 0; j < expArr.length; j++) {
+        if (expArr[i].month + '' + expArr[i].date > expArr[j].month + '' + expArr[j].date) {
+          tempObj = expArr[i];
+          expArr[i] = expArr[j];
+          expArr[j] = tempObj;
+        }
+      }
     }
-    // else {
-    //   const wallet = await firebase
-    //     .firestore()
-    //     .collection('wallet') // tables
-    //     .onSnapshot(query => {
-    //       const wallet = query.docs.map(_doc => {
-    //         const data = _doc.data(); // get wallet data as object
-    //         return data;
-    //       });
-    //       this.setState(() => {
-    //         return {
-    //           wallet: wallet
-    //         }
-    //       });
-    //     });
-    //   const expenses = await firebase
-    //     .firestore()
-    //     .collection('expenses')
-    //     .onSnapshot(query => {
-    //       const expenses = query.docs.map(_doc => {
-    //         const data = _doc.data(); // gets every expenses as array
-    //         return data;
-    //       });
-    //       this.setState(() => {
-    //         return {
-    //           expenses: expenses
-    //         }
-    //       });
-    //     });
-    // }
+    return expArr;
   }
 
-  componentDidUpdate = () => {
-    const wallet = JSON.stringify(this.state);
-    localStorage.setItem('wallet', wallet);
+  componentDidMount = async () => {
+    const wallet = await firebase
+      .firestore()
+      .collection('wallet')
+      .onSnapshot(query => {
+        const wallet = query.docs.map(_doc => {
+          const data = _doc.data(); // gets wallet info
+          return data;
+        })
+        this.setState(() => {
+          return {
+            wallet: wallet[0].wallet
+          }
+        });
+      })
+
+    const expenses = await firebase
+      .firestore()
+      .collection('expenses')
+      .onSnapshot(query => {
+        const expenses = query.docs.map(_doc => {
+          const data = _doc.data(); // gets every expenses as array
+          return data;
+        });
+        const newOrderExp = this.sortByDateDesc(expenses);
+        this.setState(() => {
+          return {
+            expenses: newOrderExp
+          }
+        });
+      });
   }
 
   submitForm = async record => {
@@ -75,16 +78,24 @@ class App extends React.Component {
       wallet: currentWallet,
       expenses: [record, ...this.state.expenses],
     }));
-    // firebase
-    //   .firestore()
-    //   .collection('expenses')
-    //   .add(record);
+    // add expense to DB
+    firebase.firestore().collection('expenses').add(record);
+    // update wallet
+    const wallet = firebase.firestore().collection('wallet').get()
+      .then(res => {
+        const id = res.docs[0].id;
+        firebase.firestore().collection('wallet').doc(id).update({
+          wallet: currentWallet
+        });
+      });
   }
 
+  // set wallet modal
   toggleModal = () => {
     this.setState(() => ({ modalVisible: !this.state.modalVisible }));
   }
 
+  // record list modal
   toggleRecord = () => {
     this.setState(() => ({ modalRecordItem: !this.state.modalRecordItem }));
   }
@@ -95,6 +106,13 @@ class App extends React.Component {
         wallet: number
       }
     });
+    firebase.firestore().collection('wallet').get()
+      .then(res => {
+        const id = res.docs[0].id;
+        firebase.firestore().collection('wallet').doc(id).update({
+          wallet: number
+        });
+      });
   }
 
   clearData = () => {
@@ -104,64 +122,101 @@ class App extends React.Component {
           expenses: []
         }
       });
+      // clear all expenses data from DB
+      firebase.firestore().collection('expenses').get()
+        .then(res => {
+          res.docs.forEach(_doc => {
+            firebase.firestore().collection('expenses').doc(_doc.id).delete();
+          });
+        });
     }
+  }
+
+  removeItem = id => {
+    this.setState(() => {
+      return {
+        expenses: this.state.expenses.filter(record => record.id !== id)
+      }
+    });
+    // remove from DB
+    firebase.firestore().collection('expenses').get()
+      .then(res => {
+        res.docs.forEach(_doc => {
+          if (_doc.data().id === id) {
+            firebase.firestore().collection('expenses').doc(_doc.id).delete();
+          }
+        });
+      });
   }
 
   render() {
     return (
-      <div>
-        {/* AddForm */}
-        <AddForm
-          submitForm={this.submitForm}
-        />
-        {/* WalletModal */}
-        <WalletModal
-          appElement={document.getElementById('#root')}
-          modalVisible={this.state.modalVisible}
-          toggle={this.toggleModal}
-          setNewBudget={this.setNewBudget}
-        />
-        <button className="buttons" onClick={this.toggleModal}>SET WALLET</button>
-        <button className="buttons" onClick={this.clearData}>CLEAR DATA</button>
-
-        {/* Header: Wallet */}
+      <div className="container">
         <div>
-          <h2 className="fontColor">Wallet: {this.state.wallet}</h2>
-        </div>
+          {/* AddForm */}
+          <AddForm
+            submitForm={this.submitForm}
+            toggle={this.toggleModal}
+          />
+          {/* WalletModal */}
+          <WalletModal
+            appElement={document.getElementById('#root')}
+            modalVisible={this.state.modalVisible}
+            toggle={this.toggleModal}
+            setNewBudget={this.setNewBudget}
+          />
+          <button className="buttons buttons__clearBtn" onClick={this.clearData}>CLEAR DATA</button>
 
-        {/* RecordList short ver. */}
-        {
-          this.state.expenses.map((recordItem, index) => index < 10 ?
-            <p className="fontColor" key={recordItem.id}>
-              {`${recordItem.month}${recordItem.date} ${recordItem.title} ${recordItem.exp}`}
-            </p> : null
-          )
-        }
-        <button className="buttons" onClick={this.toggleRecord}>SHOW ALL RECORDS</button>
+          {/* Header: Wallet */}
+          <div>
+            <h2 className="fontColor">Wallet: {this.state.wallet}</h2>
+          </div>
 
-        {/* RecordList All records */}
-        <div>
-          <Modal
-            isOpen={!!this.state.modalRecordItem}
-            contentLabel="Record list items"
-            onRequestClose={this.toggleRecord}
-            closeTimeoutMS={200}
-          >
-            <button className="buttons buttons__export" onClick={this.toggleRecord}>CLOSE</button>
-            {/* Added export to csv function */}
-            <CSVLink
-              className="buttons buttons__export"
-              filename={this.state.currentDate + 'spent_record.csv'}
-              data={this.state.expenses.map(item => ({
-                month: item.month,
-                date: item.date,
-                title: item.title,
-                exp: item.exp
-              }))}>EXPORT CSV</CSVLink>
-            <RecordList
-              expenses={this.state.expenses}
-            />
-          </Modal>
+          {/* RecordList short ver. */}
+          {
+            this.state.expenses.map((recordItem, index) => index < 10 ?
+              <ListItem key={recordItem.id} removeItem={this.removeItem} colorCheck={false} record={recordItem} /> : null
+            )
+          }
+          <button className="buttons" onClick={this.toggleRecord}>SHOW ALL RECORDS</button>
+
+          {/* RecordList All records */}
+          <div>
+            <Modal
+              isOpen={!!this.state.modalRecordItem}
+              contentLabel="Record list items"
+              onRequestClose={this.toggleRecord}
+              closeTimeoutMS={200}
+            >
+              <button className="buttons buttons__export" onClick={this.toggleRecord}>CLOSE</button>
+              {/* Added export to csv function */}
+              <CSVLink
+                className="buttons buttons__export"
+                filename={this.state.currentDate + 'spent_record.csv'}
+                data={this.state.expenses.map(item => ({
+                  month: item.month,
+                  date: item.date,
+                  title: item.title,
+                  exp: item.exp
+                }))}>EXPORT CSV</CSVLink>
+              {
+                /*  
+                <CSVDownload 
+                  filename={this.state.currentDate + 'spent_record.csv'}
+                  data={this.state.expenses.map(item => ({
+                  month: item.month,
+                  date: item.date,
+                  title: item.title,
+                  exp: item.exp
+                }))} target="_blank" />
+                */
+              }
+              <RecordList
+                expenses={this.state.expenses}
+                removeItem={this.removeItem}
+              />
+            </Modal>
+          </div>
         </div>
       </div>
     );

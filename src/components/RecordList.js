@@ -1,11 +1,12 @@
 import React from 'react';
+import ListItem from "./ListItem";
 
 const RecordList = props => {
   return (
     <div>
       {
         props.expenses ? props.expenses.map(
-          record => <p key={record.id}>{`${record.month}${record.date} ${record.title} ${record.exp}`}</p>) : null
+          record => <ListItem key={record.id} removeItem={props.removeItem} colorCheck={true} record={record} />) : null
       }
     </div>
   );

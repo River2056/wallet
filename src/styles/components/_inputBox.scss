@@ -3,8 +3,18 @@
   margin-top: 10px;
   width: 20rem;
   height: 2rem;
+  border-radius: 5px;
 }
 
 .inputBox__setWalletModal {
-  width: 12rem;
+  width: 15rem;
+  margin: 10px 0 0 10px;
+}
+
+.inputBox__addFormDate {
+  display: inline-block;
+  width: 5rem;
+  margin: 20px 10px 0 0;
+  border-radius: 5px;
+  text-align: center;
 }

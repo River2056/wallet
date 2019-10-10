@@ -31,6 +31,7 @@ class WalletModal extends React.Component {
         contentLabel="Set Wallet"
         onRequestClose={this.props.toggle}
         closeTimeoutMS={200}
+        className="modal"
       >
         <input
           className="inputBox inputBox__setWalletModal"
@@ -40,8 +41,8 @@ class WalletModal extends React.Component {
           onChange={this.handleChange}
           value={this.state.inputBudget}
         />
-        <button className="buttons" onClick={() => this.setNewBudget(this.state.inputBudget)}>SET</button>
-        <button className="buttons" onClick={this.props.toggle}>CLOSE</button>
+        <button className="buttons buttons__setWallet" onClick={() => this.setNewBudget(this.state.inputBudget)}>SET</button>
+        <button className="buttons buttons__setWallet" onClick={this.props.toggle}>CLOSE</button>
       </Modal>
     );
   }

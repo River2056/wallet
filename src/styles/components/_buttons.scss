@@ -6,10 +6,31 @@
   margin: 10px 0;
   border: none;
   border-bottom: .3rem solid darken($blue, 20%);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.buttons__addFormBtn {
+  display: inline-block;
+  margin: 10px 10px 0 0;
+}
+
+.buttons__clearBtn {
+  background-color: $red;
+  border: none;
+  border-radius: 5px;
+  color: $white;
+  border-bottom: .3rem solid darken($red, 20%);
+}
+
+.buttons__setWallet {
+  display: inline-block;
+  margin: 20px 10px;
+  text-decoration: none;
 }
 
 .buttons__export {
   display: inline-block;
-  margin: 0 5px;
+  margin: 0px 5px;
   text-decoration: none;
 }
